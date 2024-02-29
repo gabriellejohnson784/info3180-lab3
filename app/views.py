@@ -1,5 +1,7 @@
 from app import app
 from flask import render_template, request, redirect, url_for, flash
+from .forms import *
+from flask_mail import mail, Message
 
 
 ###
@@ -39,6 +41,24 @@ def send_text_file(file_name):
     file_dot_text = file_name + '.txt'
     return app.send_static_file(file_dot_text)
 
+@app.route('/contact/', methods=['GET', 'POST'])
+def contact():
+    myform = ContactForm()
+
+    if request.method == 'POST':
+        if myform.validate_on_submit():
+            # Create message object
+            print(myform.email.data)
+            msg = Message(myform.subject.data, 
+                        sender=(myform.name.data),
+                        recipients=[myform.email.data])
+            msg.body=myform.message.data
+            mail.send(msg)
+
+            flash('Your message has been sent successfully!')
+            return redirect(url_for('home')) 
+    return render_template('contact.html', form=myform)
+
 
 @app.after_request
 def add_header(response):
@@ -56,3 +76,5 @@ def add_header(response):
 def page_not_found(error):
     """Custom 404 page."""
     return render_template('404.html'), 404
+
+
